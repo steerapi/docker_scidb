@@ -9,6 +9,21 @@ Rscript /home/scidb/installPackages.R packages=scidb verbose=0 quiet=0
 
 yes | ssh-keygen -f ~/.ssh/id_rsa -t rsa -N ''
 
+#********************************************************
+echo "***** Setting up passwordless SSH..."
+#********************************************************
+yes | ssh-keygen -f ~/.ssh/id_rsa -t rsa -N ''
+sshpass -f /home/scidb/pass.txt ssh-copy-id "root@localhost"
+yes | ssh-copy-id -i ~/.ssh/id_rsa.pub  "root@0.0.0.0"
+yes | ssh-copy-id -i ~/.ssh/id_rsa.pub  "root@127.0.0.1"
+su scidb <<'EOF'
+cd ~
+yes | ssh-keygen -f ~/.ssh/id_rsa -t rsa -N ''
+sshpass -f /home/scidb/pass.txt ssh-copy-id "scidb@localhost"
+yes | ssh-copy-id -i ~/.ssh/id_rsa.pub  "scidb@0.0.0.0"
+yes | ssh-copy-id -i ~/.ssh/id_rsa.pub  "scidb@127.0.0.1"
+EOF
+
 #--------------
 #sudo su scidb
 su scidb <<'EOF'
@@ -31,7 +46,7 @@ echo "export SCIDB_BUILD_TYPE=RelWithDebInfo" >> ~/.bashrc
 echo "export PATH=/opt/scidb/15.7/bin:$PATH" >> ~/.bashrc
 #----------------------------------------------------
 source ~/.bashrc
-
+###
 mv /home/scidb/dev_dir/scidb-15.7.0.9267 /home/scidb/dev_dir/scidbtrunk
 yes | ssh-keygen -f ~/.ssh/id_rsa -t rsa -N ''
 chmod 755 ~
@@ -40,7 +55,7 @@ exec ssh-agent bash
 ssh-add
 echo xxxx.xxxx.xxxx | /home/scidb/dev_dir/scidbtrunk/deployment/deploy.sh access root "" "" localhost
 echo xxxx.xxxx.xxxx | /home/scidb/dev_dir/scidbtrunk/deployment/deploy.sh access scidb "" "" localhost
-
+###
 /home/scidb/dev_dir/scidbtrunk/deployment/./deploy.sh prepare_toolchain localhost
 /home/scidb/dev_dir/scidbtrunk/deployment/./deploy.sh prepare_coordinator localhost
 #------------ only in cluster development --------  -------------
@@ -90,3 +105,7 @@ scidb.py stopall scidb_docker
 #exit
 EOF
 #--------------
+
+#********************************************************
+echo "***** SciDB setup finished sucessfully!"
+#********************************************************

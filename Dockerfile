@@ -89,9 +89,10 @@ RUN stop ssh
 RUN start ssh
 RUN /etc/init.d/postgresql restart
 
+# RUN /root/containerSetup.sh
 	
 EXPOSE 22
+EXPOSE 8080
 EXPOSE 8083
-
 
 CMD    ["/usr/sbin/sshd", "-D"]

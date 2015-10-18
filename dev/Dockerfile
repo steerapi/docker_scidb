@@ -13,7 +13,7 @@
 #SciDB 			1239 1239
 
 
-FROM ubuntu:12.04
+FROM ubuntu:14.04
 MAINTAINER Alber Sanchez
 
 
@@ -32,7 +32,7 @@ RUN apt-get -qq update && apt-get install --fix-missing -y --force-yes \
 	zlib1g-dev \
 	nano \
 	gedit \
-	postgresql-8.4 \
+	postgresql-9.3 \
 	dialog \
 	curl \
 	libcurl3-dev \
@@ -61,9 +61,9 @@ RUN usermod -a -G sudo scidb
 RUN echo 'root:xxxx.xxxx.xxxx' | chpasswd
 RUN echo 'postgres:xxxx.xxxx.xxxx' | chpasswd
 RUN echo 'scidb:xxxx.xxxx.xxxx' | chpasswd
+RUN echo 'xxxx.xxxx.xxxx'  >> /home/scidb/pass.txt
 RUN mkdir /home/scidb/data
 RUN chown scidb:scidb /home/scidb/data
-
 
 # Configure SSH
 RUN mkdir /var/run/sshd
@@ -71,30 +71,38 @@ RUN echo 'StrictHostKeyChecking no' >> /etc/ssh/ssh_config
 
 
 # Configure Postgres
-RUN echo 'host all all 255.255.0.0/16 md5' >> /etc/postgresql/8.4/main/pg_hba.conf
+RUN echo 'host all all 255.255.0.0/16 md5' >> /etc/postgresql/9.3/main/pg_hba.conf
 
 
 #Add required files
 ADD containerSetup.sh 		/root/containerSetup.sh
+ADD conf 	                /root/conf
 ADD installR.sh 					/root/installR.sh
 ADD scidb_docker.ini 			/home/scidb/scidb_docker.ini
 ADD scidb-15.7.0.9267.tgz /home/scidb/dev_dir
 ADD installPackages.R			/home/scidb/installPackages.R
 
 
-RUN chown -R scidb:scidb /home/scidb/dev_dir
-RUN chown root:root  /root/*.*
+RUN chown -R root:root /root/*
+RUN chown -R scidb:scidb /home/scidb/*
 RUN chmod +x /root/*.sh
-
 
 # Restarting services
 RUN stop ssh
 RUN start ssh
 
+RUN apt-get install -y gdebi
+RUN sed -i 's/PermitRootLogin without-password/PermitRootLogin yes/' /etc/ssh/sshd_config
+
+# SSH login fix. Otherwise user is kicked off after login
+RUN sed 's@session\s*required\s*pam_loginuid.so@session optional pam_loginuid.so@g' -i /etc/pam.d/sshd
+
+ENV NOTVISIBLE "in users profile"
+RUN echo "export VISIBLE=now" >> /etc/profile
 
 EXPOSE 22
+EXPOSE 8080
 EXPOSE 1239
 EXPOSE 5432
-
 
 CMD    ["/usr/sbin/sshd", "-D"]
